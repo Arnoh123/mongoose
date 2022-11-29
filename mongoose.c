@@ -1466,22 +1466,22 @@ void cs_hmac_sha1(const unsigned char *key, size_t keylen,
 
 // Implementation:
 
-inline void _mbuf_resize(struct mbuf *a, size_t new_size);
+static inline void _mbuf_resize(struct mbuf *a, size_t new_size);
 
-inline void _mbuf_init(struct mbuf *mbuf, size_t initial_size) {
+static inline void _mbuf_init(struct mbuf *mbuf, size_t initial_size) {
   mbuf->len = mbuf->size = 0;
   mbuf->buf = NULL;
   _mbuf_resize(mbuf, initial_size);
 }
 
-inline void _mbuf_free(struct mbuf *mbuf) {
+static inline void _mbuf_free(struct mbuf *mbuf) {
   if (mbuf->buf != NULL) {
     MBUF_FREE(mbuf->buf);
     _mbuf_init(mbuf, 0);
   }
 }
 
-inline void _mbuf_resize(struct mbuf *a, size_t new_size) {
+static inline void _mbuf_resize(struct mbuf *a, size_t new_size) {
   if (new_size > a->size || (new_size < a->size && new_size >= a->len)) {
     char *buf = (char *) MBUF_REALLOC(a->buf, new_size);
     /*
@@ -1495,11 +1495,11 @@ inline void _mbuf_resize(struct mbuf *a, size_t new_size) {
   }
 }
 
-inline void _mbuf_trim(struct mbuf *mbuf) {
+static inline void _mbuf_trim(struct mbuf *mbuf) {
   _mbuf_resize(mbuf, mbuf->len);
 }
 
-inline size_t _mbuf_insert(struct mbuf *a, size_t off, const void *buf, size_t len) {
+static inline size_t _mbuf_insert(struct mbuf *a, size_t off, const void *buf, size_t len) {
   char *p = NULL;
 
   assert(a != NULL);
@@ -1533,11 +1533,11 @@ inline size_t _mbuf_insert(struct mbuf *a, size_t off, const void *buf, size_t l
   return len;
 }
 
-inline size_t _mbuf_append(struct mbuf *a, const void *buf, size_t len) {
+static inline size_t _mbuf_append(struct mbuf *a, const void *buf, size_t len) {
   return _mbuf_insert(a, a->len, buf, len);
 }
 
-inline void _mbuf_remove(struct mbuf *mb, size_t n) {
+static inline void _mbuf_remove(struct mbuf *mb, size_t n) {
   if (n > 0 && n <= mb->len) {
     memmove(mb->buf, mb->buf + n, mb->len - n);
     mb->len -= n;
