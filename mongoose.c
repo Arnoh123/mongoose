@@ -9171,7 +9171,11 @@ static void mg_do_ssi_include(struct mg_connection *nc, struct http_message *hm,
       mg_printf(nc, "SSI include error: path too long");
       return;
     }
-    snprintf(path, sizeof(path), "%s/%s", opts->document_root, file_name);
+    size_t root_len = strlen(opts->document_root);
+    size_t name_len = strlen(file_name);
+    memcpy(path, opts->document_root, root_len);
+    path[root_len] = '/';
+    memcpy(path + root_len + 1, file_name, name_len + 1);
   } else if (sscanf(tag, " abspath=\"%[^\"]\"", file_name) == 1) {
     /*
      * File name is relative to the webserver working directory
