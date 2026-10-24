@@ -1154,7 +1154,7 @@ void cs_md5_update(cs_md5_ctx *ctx, const unsigned char *buf, size_t len) {
   memcpy(ctx->in, buf, len);
 }
 
-void cs_md5_final(unsigned char digest[16], cs_md5_ctx *ctx) {
+void cs_md5_final(unsigned char *digest, cs_md5_ctx *ctx) {
   unsigned count;
   unsigned char *p;
   uint32_t *a;
@@ -4851,7 +4851,7 @@ enum mg_ssl_if_result mg_ssl_if_conn_accept(struct mg_connection *nc,
 
 static enum mg_ssl_if_result mg_use_cert(struct mg_ssl_if_ctx *ctx,
                                          const char *cert, const char *key,
-                                         const char **err_msg);
+                                         const char **err_msg, struct mg_connection *nc);
 static enum mg_ssl_if_result mg_use_ca_cert(struct mg_ssl_if_ctx *ctx,
                                             const char *cert);
 static enum mg_ssl_if_result mg_set_cipher_list(struct mg_ssl_if_ctx *ctx,
@@ -4887,12 +4887,11 @@ enum mg_ssl_if_result mg_ssl_if_conn_init(
   }
 
   /* TLS 1.2 and up */
-  mbedtls_ssl_conf_min_version(ctx->conf, MBEDTLS_SSL_MAJOR_VERSION_3,
-                               MBEDTLS_SSL_MINOR_VERSION_3);
+  mbedtls_ssl_conf_min_tls_version(ctx->conf, MBEDTLS_SSL_VERSION_TLS1_2);
   mbedtls_ssl_conf_rng(ctx->conf, mg_ssl_if_mbed_random, nc);
 
   if (params->cert != NULL &&
-      mg_use_cert(ctx, params->cert, params->key, err_msg) != MG_SSL_OK) {
+      mg_use_cert(ctx, params->cert, params->key, err_msg, nc) != MG_SSL_OK) {
     return MG_SSL_ERROR;
   }
 
@@ -5012,9 +5011,7 @@ enum mg_ssl_if_result mg_ssl_if_handshake(struct mg_connection *nc) {
   struct mg_ssl_if_ctx *ctx = (struct mg_ssl_if_ctx *) nc->ssl_if_data;
   int err;
   /* If bio is not yet set, do it now. */
-  if (ctx->ssl->p_bio == NULL) {
-    mbedtls_ssl_set_bio(ctx->ssl, nc, ssl_socket_send, ssl_socket_recv, NULL);
-  }
+  mbedtls_ssl_set_bio(ctx->ssl, nc, ssl_socket_send, ssl_socket_recv, NULL);
   err = mbedtls_ssl_handshake(ctx->ssl);
   if (err != 0) return mg_ssl_if_mbed_err(nc, err);
 #ifdef MG_SSL_IF_MBEDTLS_FREE_CERTS
@@ -5113,7 +5110,7 @@ static enum mg_ssl_if_result mg_use_ca_cert(struct mg_ssl_if_ctx *ctx,
 
 static enum mg_ssl_if_result mg_use_cert(struct mg_ssl_if_ctx *ctx,
                                          const char *cert, const char *key,
-                                         const char **err_msg) {
+                                         const char **err_msg, struct mg_connection *nc) {
   if (key == NULL) key = cert;
   if (cert == NULL || cert[0] == '\0' || key == NULL || key[0] == '\0') {
     return MG_SSL_OK;
@@ -5126,7 +5123,7 @@ static enum mg_ssl_if_result mg_use_cert(struct mg_ssl_if_ctx *ctx,
     MG_SET_PTRPTR(err_msg, "Invalid SSL cert");
     return MG_SSL_ERROR;
   }
-  if (mbedtls_pk_parse_keyfile(ctx->key, key, NULL) != 0) {
+  if (mbedtls_pk_parse_keyfile(ctx->key, key, NULL, mg_ssl_if_mbed_random, nc) != 0) {
     MG_SET_PTRPTR(err_msg, "Invalid SSL key");
     return MG_SSL_ERROR;
   }
@@ -16333,3 +16330,8 @@ unsigned int sleep(unsigned int seconds) {
 }
 
 #endif /* _WIN32 */
+
+
+
+
+
