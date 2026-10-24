@@ -9166,6 +9166,11 @@ static void mg_do_ssi_include(struct mg_connection *nc, struct http_message *hm,
    */
   if (sscanf(tag, " virtual=\"%[^\"]\"", file_name) == 1) {
     /* File name is relative to the webserver root */
+    if (opts->document_root == NULL ||
+        strlen(opts->document_root) + 1 + strlen(file_name) >= sizeof(path)) {
+      mg_printf(nc, "SSI include error: path too long");
+      return;
+    }
     snprintf(path, sizeof(path), "%s/%s", opts->document_root, file_name);
   } else if (sscanf(tag, " abspath=\"%[^\"]\"", file_name) == 1) {
     /*
