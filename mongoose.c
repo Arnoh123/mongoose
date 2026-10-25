@@ -1,4 +1,5 @@
 #include "mongoose.h"
+#include "esp_rom_sys.h"
 #ifdef MG_MODULE_LINES
 #line 1 "mongoose/src/mg_internal.h"
 #endif
@@ -2365,6 +2366,16 @@ MG_INTERNAL void mg_call(struct mg_connection *nc,
   if (ev_handler != NULL) {
     unsigned long flags_before = nc->flags;
     size_t recv_mbuf_before = nc->recv_mbuf.len, recved;
+
+    esp_rom_printf(
+      "[MG-CALL] nc=%p handler=%p proto=%p selected=%p ev=%d\n",
+      (void *)nc,
+      (void *)nc->handler,
+      (void *)nc->proto_handler,
+      (void *)ev_handler,
+      ev
+    );
+
     ev_handler(nc, ev, ev_data MG_UD_ARG(user_data));
     recved = (recv_mbuf_before - nc->recv_mbuf.len);
     /* Prevent user handler from fiddling with system flags. */
